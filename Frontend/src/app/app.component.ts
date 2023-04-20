@@ -7,8 +7,8 @@ import {FireService} from "./fire.service";
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'Frontend';
+  sendThisMessage: any;
 
-  constructor(private fireService: FireService) {
+  constructor(public fireService: FireService) {
   }
 }
