@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import firebase from "firebase/compat/app";
 import 'firebase/compat/firestore'
+import 'firebase/compat/auth'
 
 import * as config from '../../firebaseconfig.js'
 @Injectable({
@@ -10,11 +11,19 @@ export class FireService {
 
   firebaseApplication;
   firestore: firebase.firestore.Firestore;
+  fireauth : firebase.auth.Auth;
   messages: any[] = [];
   constructor() {
     this.firebaseApplication = firebase.initializeApp(config.firebaseconfig)
     this.firestore = firebase.firestore();
-    this.getMessages();
+    this.fireauth = firebase.auth();
+
+    this.fireauth.onAuthStateChanged((user) => {
+      if(user)
+      {
+        this.getMessages();
+      }
+    })
   }
 
   sendMessage(sendThisMessage: any) {
@@ -31,15 +40,36 @@ export class FireService {
   {
     this.firestore
       .collection('myChat')
+      .orderBy('timeStamp')
       .onSnapshot(snapshot => {
         snapshot.docChanges().forEach(change => {
-          if (change.type == "added")
+          if (change.type == 'added')
           {
-            this.messages.push(change.doc.data())
+            this.messages.push({id: change.doc.id, data: change.doc.data()})
+          } if (change.type=='modified')  {
+            const index = this.messages.findIndex(document => document.id != change.doc.id)
+            this.messages[index] = {id: change.doc.id, data: change.doc.data()}
+          } if (change.type == 'removed') {
+            this.messages == this.messages.filter(m => m.id != change.doc.id)
           }
         })
       })
 
+  }
+
+  register(email: string, password: string) : void
+  {
+    this.fireauth.createUserWithEmailAndPassword(email, password);
+  }
+
+  signIn(email: string, password: string) : void
+  {
+    this.fireauth.signInWithEmailAndPassword(email, password);
+  }
+
+  signOut() : void
+  {
+    this.fireauth.signOut();
   }
 }
 
